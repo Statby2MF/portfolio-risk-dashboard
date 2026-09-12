@@ -16,20 +16,34 @@ DEFAULT_ASSETS = {
 }
 
 
-def load_asset_data(symbol, start_date, end_date):
+def load_asset_data(symbol, start_date=None, end_date=None):
     """
-    Charge les données d'un actif
+    Charge les données depuis les fichiers locaux
     """
+    import os
+    
+    # Chemin du fichier local
+    data_dir = "data"
+    filepath = f"{data_dir}/{symbol}.csv"
+    
+    # Si le fichier existe, on le lit
+    if os.path.exists(filepath):
+        df = pd.read_csv(filepath, index_col=0, parse_dates=True)
+        return df["Close"]
+    
+    # Sinon, on essaie de télécharger
+    print(f"⚠️ {symbol} non trouvé en local, tentative de téléchargement...")
     try:
         ticker = yf.Ticker(symbol)
-        data = ticker.history(start=start_date, end=end_date)
+        data = ticker.history(period="2y")
         if not data.empty:
-            return data['Close']
-        return None
-    except Exception as e:
-        print(f"❌ Erreur pour {symbol}: {e}")
-        return None
-
+            # Sauvegarder pour la prochaine fois
+            data["Close"].to_csv(filepath)
+            return data["Close"]
+    except:
+        pass
+    
+    return None
 
 def load_portfolio_data(symbols, period="2y"):
     """
